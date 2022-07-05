@@ -55,4 +55,4 @@ The libraries use in this project:
 
 requests
 
-fs4
+bs4
