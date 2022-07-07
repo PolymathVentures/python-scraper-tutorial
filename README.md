@@ -43,7 +43,9 @@ Ejecutamos el script scraper.py
 ```
 
 Si no lo puedes realizar con python puedes validar con python3 scraper.py 
+
 ![Screenshot](goodrun.jpg)
+
 Si al ejecutar el script no obtenemos ningún error significa que tenemos bien instaladas las librerías 👍, ahora obtenemos la página web con request agregando las siguientes lineas a nuestro archivo scraper.py 
 ```python
 url = 'https://www.imdb.com/chart/top/'
@@ -81,7 +83,7 @@ print(type(format_page.body.div))
 ```
 Si queremos obtener el contenido dentro del tag html debemos utilizar el método text
 ```python
-print(type(format_page.body.div).text)
+print(format_page.body.div.text)
 ```
 
 Teniendo lo anterior claro ahora vamos ha realizar el scraper, para esto lo primero es definir qué datos queremos obtener es diferente si queremos traer todo un objeto o sólo cierta información, para nuestro ejemplo vamos a obtener el título , la fecha de estreno y el rating de cada una de las 250 películas que están en la lista
