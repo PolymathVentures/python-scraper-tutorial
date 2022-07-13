@@ -24,6 +24,12 @@ Para poder realizar el scraper lo primero que vamos a realizar es obtener el con
 - Requests: Liberia HTTP de python para hacer http request mas faciles
 - BeautifulSoup: Módulo de la librería BS4 de python que analiza la pagina y extrae la información que le indicamos y la formatea para que sea más fácil de manipular
 
+Aunque python por defecto tiene la posibilidad de formatear el contenido html utilizamos BeautifulSoup por que nos brinda un mejor formato, dentro de las ventajas que obtenemos estan:
+
+- Velocidad
+- Formatea la pagina igual que un navegador
+- Embellece o estandariza mejor el código fuente
+
 Debemos instalar las librerías
 ```bash
   pip install requests bs4
@@ -49,41 +55,43 @@ Si no lo puedes realizar con python puedes validar con python3 scraper.py
 Si al ejecutar el script no obtenemos ningún error significa que tenemos bien instaladas las librerías 👍, ahora obtenemos la página web con request agregando las siguientes lineas a nuestro archivo scraper.py 
 ```python
 url = 'https://www.imdb.com/chart/top/'
-page = requests.get(url)
+response = requests.get(url)
 ```
 
 Como ya tenemos nuestra pagina web ahora vamos a utilizar BeautifulSoup para poder obtener directamente cualquier tag o elemento html que deseemos, para esto agregamos la siguiente linea nuestro script scraper.py 
 ```python
-format_page =  BeautifulSoup(page.content, 'html.parser')
+root =  BeautifulSoup(response.content, 'html.parser')
 ```
 
 
 
-Ya con nuestra página en nuestro objeto format_page formateada podemos navegar por el contenido html de la página que obtuvimos con requests y extraer la información, antes de hacer esto veamos algunos ejemplos de cómo podemos obtener información con BeautifulSoup
+Ya con nuestra página en nuestro objeto root formateada podemos navegar por el contenido html de la página que obtuvimos con requests y extraer la información, antes de hacer esto veamos algunos ejemplos de cómo podemos obtener información con BeautifulSoup
 
 Podemos extraer contenido de BeautifulSoup con los siguientes comandos:
 
 | Acción | Codigo  |
 | ------- | --- |
-| Obtener el título de la página el elemento <title> | format_page.title |
-| Obtener el body de la página el elemento <body> | format_page.body |
-| Obtener el primer div que se encuentra en el body | format_page.body.div |
-| Obtener todos los div’s que están en la página | format_page.find_all('div') |
-| Obtener todos los div’s que están en la página con una clase* específica | format_page.find_all('div', class_='subnav_item_main') |
-| Obtener el div’s que están en la página con un id especifico | format_page.find_all('div', id='success-story-929') |
+| Obtener el título de la página el elemento <title> | root.title |
+| Obtener el body de la página el elemento <body> | root.body |
+| Obtener el primer div que se encuentra en el body | root.body.div |
+| Obtener todos los div’s que están en la página | root.find_all('div') |
+| Obtener todos los div’s que están en la página con una clase* específica | root.find_all('div', class_='subnav_item_main') |
+| Obtener el div’s que están en la página con un id especifico | root.find_all('div', id='success-story-929') |
+| Obtener todos los elementos que una clase | root.select( '.subnav_item_main') |
+| Obtener un elemento con una clase especifica | root.select_one('.success-story a') |
 
 > *En python la palabra class es reservada es por esto que en este método debemos pasarle el identificador class_ si quisiéramos utilizar la palabra reservada class debemos pasarla como un atributo como se muestra a continuación
 ```python
-format_page.find_all('div', {'class':success-story-item})
+root.find_all('div', {'class':success-story-item})
 ```
 
 Es importante tener presente que el contenido que retorna BeautifulSoup no es de tipo text si no de tipo tag , estamos obteniendo directamente todo el elemento tag del html
 ```python
-print(type(format_page.body.div))
+print(type(root.body.div))
 ```
 Si queremos obtener el contenido dentro del tag html debemos utilizar el método text
 ```python
-print(format_page.body.div.text)
+print(root.body.div.text)
 ```
 
 Teniendo lo anterior claro ahora vamos ha realizar el scraper, para esto lo primero es definir qué datos queremos obtener es diferente si queremos traer todo un objeto o sólo cierta información, para nuestro ejemplo vamos a obtener el título , la fecha de estreno y el rating de cada una de las 250 películas que están en la lista
@@ -92,38 +100,42 @@ Para esto vamos a utilizar el inspector de código sobre la página para validar
 
 ![Screenshot](inspect1.jpg)
 
-Como podemos ver en la imagen todas las listas están en una tabla con la clase “lister-list” y dentro de este tabla cada película ocupa una fila , lo primero que realizaremos es obtener el body de la tabla con la clase “lister-list”, para esto agregamos la siguiente línea a nuestro script
+Como podemos ver en la imagen todas las listas están en una tabla con la clase “lister-list” y dentro de este tabla cada película ocupa una fila , lo primero que realizaremos es obtener el body de la tabla con la clase “lister-list” y despues obtenemos todas las filas del tbody, para esto agregamos la siguiente línea a nuestro script
 ```python
-tbody = format_page.find('tbody', class_='lister-list')
+rows = root.select("tbody.lister-list tr")
 ```
 
 Ahora que ya tenemos la tabla podemos obtener cada fila de la pelicula realizando un loop sobre los elementos de la tabla
 ```python
-for movie in tbody.find_all('tr'):
+for movie in rows
 	print(movie)
 ```
 
 Si vemos el resultado de ejecutar nuestros script encontramos que ya tenemos el elemento tr , ahora debemos ir al detalle de cada celda para obtener:
+
 ![Screenshot](output.jpg)
 ### El nombre:
 ![Screenshot](inspect2.jpg)
+
 El nombre se encuentra dentro de la fila tr en una celda td con la clase “titleColum” y dento de un tag de enlace <a> , para poder obtenerlo agregamos la siguiente linea
 ```python
-title = movie.find('td', {'class':'titleColumn'}).a.text 
+title = movie.select_one(".titleColumn a").text
 ```
 
 ### El año de lanzamiento:
 ![Screenshot](inspect3.jpg)
+
 El año de lanzamiento se encuentra dentro de la misma celda td que el nombre, solo que se encuentra dentro de un tag <span>
 ```python
-year = movie.find('td', class_='titleColumn').span.text
+year = movie.select_one(".titleColumn span").text
 ```
 
 ### La Calificación(Rating):
 ![Screenshot](inspect4.jpg)
+
 La Calificación se encuentra dentro de la celda td con la clase “imdbRating” y dentro de un tag <strong>
 ```python
-rating = movie.find('td', class_='imdbRating').strong.text
+rating = movie.select_one(".ratingColumn strong").text
 ```
 
 
@@ -133,14 +145,14 @@ import requests ,bs4
 from bs4 import BeautifulSoup
 
 url = 'https://www.imdb.com/chart/top/'
-page = requests.get(url)
-format_page =  BeautifulSoup(page.content, 'html.parser')
-tbody = format_page.find('tbody', class_='lister-list')
+response = requests.get(url)
+root = BeautifulSoup(response.content, "html.parser")
+rows = root.select("tbody.lister-list tr")
 
-for movie in tbody.find_all('tr'):
-	title = movie.find('td', {'class':'titleColumn'}).a.text
-	year = movie.find('td', class_='titleColumn').span.text
-	rating = movie.find('td', class_='imdbRating').strong.text
+for movie in rows:
+	title = movie.select_one(".titleColumn a").text
+	year = movie.select_one(".titleColumn span").text
+	rating = movie.select_one(".ratingColumn strong").text
 ```
 	
 ## Guardando los datos en un archivo csv:
@@ -167,6 +179,18 @@ Por último cerramos el documento movies.csv
 f.close()
 ```
 
+Para garantizar que siempre se ejecuto el codigo podemos remplazar la apertura y el cierre del archivo:
+```python
+f = open('movies.csv', 'w')
+.......
+f.close()
+```
+por: 
+```python
+with open("movies.csv", "w") as f:
+	.......
+```
+
 Y nuestro código completo quedaría de la siguiente manera:
 ```python
 import requests ,bs4
@@ -174,28 +198,27 @@ from bs4 import BeautifulSoup
 import csv
 
 url = 'https://www.imdb.com/chart/top/'
-page = requests.get(url)
-format_page =  BeautifulSoup(page.content, 'html.parser')
-tbody = format_page.find('tbody', class_='lister-list')
+response = requests.get(url)
 
-f = open('movies.csv', 'w')
-writer = csv.writer(f)
+root = BeautifulSoup(response.content, "html.parser")
+rows = root.select("tbody.lister-list tr")
 
-header = ['Title', 'ReleaseDate', 'Rating']
-writer.writerow(header)
+with open("movies.csv", "w") as f:
 
-for movie in tbody.find_all('tr'):	
-	title = movie.find('td', {'class':'titleColumn'}).a.text
-	year = movie.find('td', class_='titleColumn').span.text
-	rating = movie.find('td', class_='imdbRating').strong.text
-	writer.writerow([title,year,rating])
+    writer = csv.writer(f)
+    writer.writerow(header)
 
-f.close()
+    for movie in rows:
+        title = movie.select_one(".titleColumn a").text
+        year = movie.select_one(".titleColumn span").text
+        rating = movie.select_one(".ratingColumn strong").text
+
+        writer.writerow([title, year, rating])
 ```
 
 
 **Importante:** es necesario que cuando realices un scraping tengas presente las políticas de la página que deseas scrapear para estar seguro que no se está infringiendo ninguna ley, esta validación la puedes realizar también ingresando al dominio principal del sitio y agregando /robots.txt donde puedes validar si la url sobre la que estás realizando el scraper está autorizada o no , para nuestro ejemplo vamos a utilizar la página de imdb sólo con fines educativos
 
 ## Conclusiones finales
-Con unas pocas líneas de código es posible obtener la información de alguna página de forma ordenada y automática, esto nos puede funcionar para hacer una migración masiva de datos de un sitio a otro , para estudios de mercado o para tener información confiable en tiempo real, si te gusto este contenido y quieres que te notifiqumos cuando publiquemos algo nuevo inscribete en nuestro newsletter aquí.
+Con unas pocas líneas de código es posible obtener la información de alguna página de forma ordenada y automática, esto nos puede funcionar para hacer una migración masiva de datos de un sitio a otro , para estudios de mercado o para tener información confiable en tiempo real, si te gusto este contenido y quieres que te notifiqumos cuando publiquemos algo nuevo inscribete en nuestro newsletter  [aquí](https://polymathv.us3.list-manage.com/subscribe/post?u=bf424acd364ec846df798dafc&id=59ef62c1d3).
 
