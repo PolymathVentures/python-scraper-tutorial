@@ -216,6 +216,61 @@ with open("movies.csv", "w") as f:
         writer.writerow([title, year, rating])
 ```
 
+## Refactoring
+
+Aunque nuestro código es totalmente funcional existen algunas modificaciones pequeñas que podemos realizar que hacen que el codigo sea mas escalable, podemos definir un arreglo donde alamancenemos todos los atributos que deseamos ontener
+
+```python
+attrs_selectors = {
+    "Title": ".titleColumn a",
+    "ReleaseDate": ".titleColumn span",
+    "Rating": ".ratingColumn strong",
+}
+```
+En nuestro writer podemos hacer que las llaves del array sean el header del archivo para esto nuestro write lo definimos asi:
+```python
+writer = csv.DictWriter(f, fieldnames=attrs_selectors.keys())
+writer.writeheader()
+```
+
+y en nuestro loop de peliculas podemos obtener los datos de cada pelicula del siguiente modo:
+```python
+movie = {}
+for attr, selector in attrs_selectors.items():
+	movie[attr] = row.select_one(selector).text
+```
+Y nuestro código completo(scarper2.py) quedaría de la siguiente manera:
+```python
+import requests, bs4
+from bs4 import BeautifulSoup
+import csv
+
+attrs_selectors = {
+    "Title": ".titleColumn a",
+    "ReleaseDate": ".titleColumn span",
+    "Rating": ".ratingColumn strong",
+}
+
+url = "https://www.imdb.com/chart/top/"
+
+response = requests.get(url)
+
+root = BeautifulSoup(response.content, "html.parser")
+rows = root.select("tbody.lister-list tr")
+
+with open("movies.csv", "w") as f:
+
+    writer = csv.DictWriter(f, fieldnames=attrs_selectors.keys())
+    writer.writeheader()
+
+    for row in rows:
+
+        movie = {}
+        for attr, selector in attrs_selectors.items():
+            movie[attr] = row.select_one(selector).text
+
+        writer.writerow(movie)	
+```
 
 **Importante:** es necesario que cuando realices un scraping tengas presente las políticas de la página que deseas scrapear para estar seguro que no se está infringiendo ninguna ley, esta validación la puedes realizar también ingresando al dominio principal del sitio y agregando /robots.txt donde puedes validar si la url sobre la que estás realizando el scraper está autorizada o no , para nuestro ejemplo vamos a utilizar la página de imdb sólo con fines educativos
 
